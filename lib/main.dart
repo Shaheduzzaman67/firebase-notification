@@ -1,6 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:firebase_push_notification/notification.dart';
+import 'package:firebase_push_notification/models/notification.dart';
 import 'package:firebase_push_notification/services/db.dart';
 import 'package:flutter/material.dart';
 import 'package:overlay_support/overlay_support.dart';
@@ -10,8 +10,13 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 }
 
 void main() async {
+
+  WidgetsFlutterBinding.ensureInitialized();
+
   await DB.init();
+
   runApp(MyApp());
+
 }
 
 class MyApp extends StatelessWidget {
@@ -41,7 +46,6 @@ class _HomePageState extends State<HomePage> {
   PushNotification? _notificationInfo;
 
   void _save() async {
-    Navigator.of(context).pop();
     PushNotification item = PushNotification(
         title: _notificationInfo!.title!, body: _notificationInfo!.body!);
 
@@ -51,10 +55,12 @@ class _HomePageState extends State<HomePage> {
   }
 
   void refresh() async {
+
     List<Map<String, dynamic>> _results =
         await DB.query(PushNotification.table);
     _messages = _results.map((item) => PushNotification.fromMap(item)).toList();
     setState(() {});
+
   }
 
   TextStyle _style = TextStyle(color: Colors.white, fontSize: 24);
@@ -196,7 +202,7 @@ class _HomePageState extends State<HomePage> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            'App for capturing Firebase Push Notifications',
+            'Firebase Push Notifications',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: Colors.black,
@@ -204,44 +210,19 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           SizedBox(height: 16.0),
-          NotificationBadge(totalNotifications: _totalNotifications),
+          NotificationBadge(totalNotifications: _messages.length),
           SizedBox(height: 16.0),
-          _messages.length > 0
-              ? ListView.builder(
+          ListView.builder(
                   shrinkWrap: true,
                   itemCount: _messages.length,
                   itemBuilder: (context, index) {
                     PushNotification message = _messages[index];
 
                     return ListTile(
-                      title: Text(message == null ? '' : message.title!),
-                      subtitle: Text(message == null ? '' : message.body!),
+                      title: Text('title: ${message.title!}'),
+                      subtitle: Text('body: ${message.body!}'),
                     );
                   })
-              : Container(),
-
-          /*_notificationInfo != null
-              ? Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'TITLE: ${_notificationInfo!.dataTitle ?? _notificationInfo!.title}',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16.0,
-                ),
-              ),
-              SizedBox(height: 8.0),
-              Text(
-                'BODY: ${_notificationInfo!.dataBody ?? _notificationInfo!.body}',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16.0,
-                ),
-              ),
-            ],
-          )
-              : Container(),*/
         ],
       ),
     );
