@@ -1,4 +1,5 @@
 import 'package:firebase_push_notification/models/model.dart';
+import 'package:flutter/src/widgets/framework.dart';
 
 class PushNotification extends Model{
 

@@ -4,16 +4,16 @@ import 'package:sqflite/sqflite.dart';
 
 abstract class DB {
 
-	static Database ?_db;
+	static Database? _db;
 
 	static int get _version => 1;
 
 	static Future<void> init() async {
 
-		if (_db != null) { return; }
+		//if (_db != null) { return; }
 
 		try {
-			String _path = await getDatabasesPath() + 'example';
+			String _path = await getDatabasesPath() + 'notifications';
 			_db = await openDatabase(_path, version: _version, onCreate: onCreate);
 		}
 		catch(ex) { 
@@ -22,7 +22,7 @@ abstract class DB {
 	}
 
 	static void onCreate(Database db, int version) async =>
-		await db.execute('CREATE TABLE todo_items (id INTEGER PRIMARY KEY NOT NULL, task STRING, complete BOOLEAN)');
+		await db.execute('CREATE TABLE todo_items (id INTEGER PRIMARY KEY NOT NULL, title STRING, body STRING)');
 
 	static Future<List<Map<String, dynamic>>> query(String table) async => _db!.query(table);
 

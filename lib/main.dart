@@ -1,16 +1,16 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_push_notification/notification.dart';
+import 'package:firebase_push_notification/services/db.dart';
 import 'package:flutter/material.dart';
 import 'package:overlay_support/overlay_support.dart';
-import 'package:sqflite/sqflite.dart';
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   print("Handling a background message: ${message.messageId}");
 }
 
 void main() async {
-
+  await DB.init();
   runApp(MyApp());
 }
 
@@ -39,6 +39,42 @@ class _HomePageState extends State<HomePage> {
   late final FirebaseMessaging _messaging;
   late int _totalNotifications;
   PushNotification? _notificationInfo;
+
+  void _save() async {
+    Navigator.of(context).pop();
+    PushNotification item = PushNotification(
+        title: _notificationInfo!.title!, body: _notificationInfo!.body!);
+
+    await DB.insert(PushNotification.table, item);
+    setState(() {});
+    refresh();
+  }
+
+  void refresh() async {
+    List<Map<String, dynamic>> _results =
+        await DB.query(PushNotification.table);
+    _messages = _results.map((item) => PushNotification.fromMap(item)).toList();
+    setState(() {});
+  }
+
+  TextStyle _style = TextStyle(color: Colors.white, fontSize: 24);
+
+  List<Widget> get _items => _messages.map((item) => format(item)).toList();
+
+  Widget format(PushNotification item) {
+    return Padding(
+        padding: EdgeInsets.fromLTRB(12, 6, 12, 4),
+        child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: <Widget>[
+              Text(item.title!, style: _style),
+              Icon(
+                  item.body == true
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_unchecked,
+                  color: Colors.white)
+            ]));
+  }
 
   void registerNotification() async {
     await Firebase.initializeApp();
@@ -74,9 +110,8 @@ class _HomePageState extends State<HomePage> {
         });
 
         if (_notificationInfo != null) {
-
           _messages.add(_notificationInfo!);
-
+          _save();
           // For displaying the notification as an overlay
           showSimpleNotification(
             Text(_notificationInfo!.title!),
@@ -96,7 +131,7 @@ class _HomePageState extends State<HomePage> {
   checkForInitialMessage() async {
     await Firebase.initializeApp();
     RemoteMessage? initialMessage =
-    await FirebaseMessaging.instance.getInitialMessage();
+        await FirebaseMessaging.instance.getInitialMessage();
 
     if (initialMessage != null) {
       PushNotification notification = PushNotification(
@@ -112,7 +147,7 @@ class _HomePageState extends State<HomePage> {
       });
 
       _messages.add(_notificationInfo!);
-
+      _save();
     }
   }
 
@@ -139,7 +174,11 @@ class _HomePageState extends State<HomePage> {
 
       _messages.add(_notificationInfo!);
 
+      _save();
+
     });
+
+    refresh();
 
     super.initState();
   }
@@ -167,20 +206,19 @@ class _HomePageState extends State<HomePage> {
           SizedBox(height: 16.0),
           NotificationBadge(totalNotifications: _totalNotifications),
           SizedBox(height: 16.0),
+          _messages.length > 0
+              ? ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: _messages.length,
+                  itemBuilder: (context, index) {
+                    PushNotification message = _messages[index];
 
-          _messages.length > 0 ? ListView.builder(
-    shrinkWrap: true,
-    itemCount: _messages.length,
-    itemBuilder: (context, index) {
-      PushNotification message = _messages[index];
-
-      return ListTile(
-        title: Text(
-            message == null ? '' : message.title!),
-        subtitle:
-        Text(message == null ? '' : message.body!),
-      );
-    }) : Container(),
+                    return ListTile(
+                      title: Text(message == null ? '' : message.title!),
+                      subtitle: Text(message == null ? '' : message.body!),
+                    );
+                  })
+              : Container(),
 
           /*_notificationInfo != null
               ? Column(
