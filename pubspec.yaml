@@ -37,6 +37,7 @@ dependencies:
   firebase_core: ^1.2.0
   firebase_messaging: ^10.0.0
   overlay_support: ^1.2.1
+  sqflite:
 
 dev_dependencies:
   flutter_test:
