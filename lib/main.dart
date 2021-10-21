@@ -10,13 +10,9 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 }
 
 void main() async {
-
   WidgetsFlutterBinding.ensureInitialized();
-
   await DB.init();
-
   runApp(MyApp());
-
 }
 
 class MyApp extends StatelessWidget {
@@ -24,7 +20,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return OverlaySupport(
       child: MaterialApp(
-        title: 'Notify',
+        title: 'Notification',
         theme: ThemeData(
           primarySwatch: Colors.deepPurple,
         ),
@@ -41,46 +37,9 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+
   late final FirebaseMessaging _messaging;
-  late int _totalNotifications;
   PushNotification? _notificationInfo;
-
-  void _save() async {
-    PushNotification item = PushNotification(
-        title: _notificationInfo!.title!, body: _notificationInfo!.body!);
-
-    await DB.insert(PushNotification.table, item);
-    setState(() {});
-    refresh();
-  }
-
-  void refresh() async {
-
-    List<Map<String, dynamic>> _results =
-        await DB.query(PushNotification.table);
-    _messages = _results.map((item) => PushNotification.fromMap(item)).toList();
-    setState(() {});
-
-  }
-
-  TextStyle _style = TextStyle(color: Colors.white, fontSize: 24);
-
-  List<Widget> get _items => _messages.map((item) => format(item)).toList();
-
-  Widget format(PushNotification item) {
-    return Padding(
-        padding: EdgeInsets.fromLTRB(12, 6, 12, 4),
-        child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
-              Text(item.title!, style: _style),
-              Icon(
-                  item.body == true
-                      ? Icons.radio_button_checked
-                      : Icons.radio_button_unchecked,
-                  color: Colors.white)
-            ]));
-  }
 
   void registerNotification() async {
     await Firebase.initializeApp();
@@ -110,10 +69,7 @@ class _HomePageState extends State<HomePage> {
           dataBody: message.data['body'],
         );
 
-        setState(() {
-          _notificationInfo = notification;
-          _totalNotifications++;
-        });
+        _notificationInfo = notification;
 
         if (_notificationInfo != null) {
           _messages.add(_notificationInfo!);
@@ -121,7 +77,7 @@ class _HomePageState extends State<HomePage> {
           // For displaying the notification as an overlay
           showSimpleNotification(
             Text(_notificationInfo!.title!),
-            leading: NotificationBadge(totalNotifications: _totalNotifications),
+            leading: NotificationBadge(totalNotifications: _messages.length),
             subtitle: Text(_notificationInfo!.body!),
             background: Colors.cyan.shade700,
             duration: Duration(seconds: 2),
@@ -147,24 +103,20 @@ class _HomePageState extends State<HomePage> {
         dataBody: initialMessage.data['body'],
       );
 
-      setState(() {
-        _notificationInfo = notification;
-        _totalNotifications++;
-      });
+      _notificationInfo = notification;
 
       _messages.add(_notificationInfo!);
+
       _save();
     }
   }
 
   @override
   void initState() {
-    _totalNotifications = 0;
+
     registerNotification();
     checkForInitialMessage();
 
-    // For handling notification when the app is in background
-    // but not terminated
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       PushNotification notification = PushNotification(
         title: message.notification?.title,
@@ -173,12 +125,7 @@ class _HomePageState extends State<HomePage> {
         dataBody: message.data['body'],
       );
 
-      setState(() {
-        _notificationInfo = notification;
-        _totalNotifications++;
-      });
-
-      _messages.add(_notificationInfo!);
+      _notificationInfo = notification;
 
       _save();
 
@@ -189,20 +136,36 @@ class _HomePageState extends State<HomePage> {
     super.initState();
   }
 
+  void _save() async {
+    PushNotification item = PushNotification(
+        title: _notificationInfo!.title!, body: _notificationInfo!.body!);
+
+    await DB.insert(PushNotification.table, item);
+    setState(() {});
+    refresh();
+  }
+
+  void refresh() async {
+    List<Map<String, dynamic>> _results =
+    await DB.query(PushNotification.table);
+    _messages = _results.map((item) => PushNotification.fromMap(item)).toList();
+    setState(() {});
+  }
+
   List<PushNotification> _messages = [];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Notify'),
+        title: Text('Firebase Push Notifications'),
         brightness: Brightness.dark,
       ),
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            'Firebase Push Notifications',
+            'Total',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: Colors.black,
@@ -213,16 +176,16 @@ class _HomePageState extends State<HomePage> {
           NotificationBadge(totalNotifications: _messages.length),
           SizedBox(height: 16.0),
           ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: _messages.length,
-                  itemBuilder: (context, index) {
-                    PushNotification message = _messages[index];
+              shrinkWrap: true,
+              itemCount: _messages.length,
+              itemBuilder: (context, index) {
+                PushNotification message = _messages[index];
 
-                    return ListTile(
-                      title: Text('title: ${message.title!}'),
-                      subtitle: Text('body: ${message.body!}'),
-                    );
-                  })
+                return ListTile(
+                  title: Center(child: Text('Title: ${message.title!}')),
+                  subtitle: Center(child: Text('Body: ${message.body!}')),
+                );
+              })
         ],
       ),
     );

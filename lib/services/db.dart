@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:firebase_push_notification/models/model.dart';
+import 'package:firebase_push_notification/models/notification.dart';
 import 'package:sqflite/sqflite.dart';
 
 abstract class DB {
@@ -26,6 +26,6 @@ abstract class DB {
 
 	static Future<List<Map<String, dynamic>>> query(String table) async => _db!.query(table);
 
-	static Future<int> insert(String table, Model model) async =>
+	static Future<int> insert(String table, PushNotification model) async =>
 		await _db!.insert(table, model.toMap());
 }
